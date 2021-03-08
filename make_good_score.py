@@ -55,28 +55,33 @@ def fix_marks(schoolkid):
     for bad_mark in bad_marks:
         bad_mark.points = 5
         bad_mark.save()
-    logger.info(f'{len(bad_marks)} bad marks are fixed for {schoolkid.full_name}')
+    logger.info(f'{len(bad_marks)} плохих оценок исправлены для ученика'
+                f'{schoolkid.full_name}')
 
 
 def remove_chastisements(schoolkid):
     Chastisement.objects.filter(schoolkid=schoolkid).delete()
-    logger.info(f'Chastisements deleted for {schoolkid.full_name}')
+    logger.info(f'Замечания удалены для ученика {schoolkid.full_name}')
 
 
-def correct_bad_marks_and_chartisements(name):
+def make_good_pupil(name, commendation_subject):
     try:
         child = get_schoolkid(name)
         fix_marks(child)
         remove_chastisements(child)
+        create_commendation(child, commendation_subject)
     except ObjectDoesNotExist:
-        logger.error(f'No schoolkid with name "{name}" was found')
+        logger.error(f'Ученик с именем "{name}" не найден')
     except MultipleObjectsReturned:
-        logger.error(f'Clarify name "{name}": too many schoolkids was found')
+        logger.error(f'Уточните имя "{name}": в базе обнаружено слишком много'
+                    'учеников с таким именем')
+    except ValueError as error:
+        logger.error(error)
 
 
 def get_schoolkid(name):
     child = Schoolkid.objects.get(full_name__contains=name)
-    logger.info(f'Pupil is found: {child.full_name}')
+    logger.info(f'Ученик найден: {child.full_name}')
     return child
 
 
@@ -87,9 +92,9 @@ def is_commendation_at_lesson(schoolkid, lesson):
         created=lesson.date
     )
     if not any(commendations):
-        logging.debug(f'No commendations at {lesson.subject.title}, {lesson.date}')
+        logging.debug(f'Замечаний нет по {lesson.subject.title}, {lesson.date}')
         return
-    logging.debug(f'Found {len(commendations)} commendations at '
+    logging.debug(f'Найдено {len(commendations)} замечаний по '
                     f'{lesson.subject.title}, {lesson.date}')
     return True
 
@@ -100,25 +105,25 @@ def get_last_lesson_without_commendation(schoolkid, subject_title):
         group_letter=schoolkid.group_letter,
         subject__title=subject_title
     ).order_by('date')
+    if len(lessons) < 1:
+        raise ValueError('Ошибка при добавлении похвалы: уроки с названием '
+            f'"{subject_title}" не найдены')
     lessons_without_commendations = [lesson for lesson in lessons
         if not is_commendation_at_lesson(schoolkid, lesson)]
+    if len(lessons_without_commendations) < 1:
+        raise ValueError('Ошибка при добавлении похвалы: не найдено уроков'
+            f'"{subject_title}" без похвалы, выберите другой предмет')
     return lessons_without_commendations[-1]
 
 
-def create_commendation(name, subject_title):
-    try:
-        child = get_schoolkid(name)
-        last_lesson = get_last_lesson_without_commendation(child, subject_title)
-        Commendation.objects.create(
-            text=random.choice(COMMENDATIONS),
-            created=last_lesson.date,
-            schoolkid=child,
-            subject=last_lesson.subject,
-            teacher=last_lesson.teacher,
-        )
-        logger.info(f'Commendation created: {last_lesson.date}, '
-                    f'{last_lesson.subject.title}, {child.full_name}')
-    except ObjectDoesNotExist:
-        logger.error(f'No schoolkid with name "{name}" was found')
-    except MultipleObjectsReturned:
-        logger.error(f'Clarify name "{name}": too many schoolkids was found')
+def create_commendation(schoolkid, subject_title):
+    last_lesson = get_last_lesson_without_commendation(schoolkid, subject_title)
+    Commendation.objects.create(
+        text=random.choice(COMMENDATIONS),
+        created=last_lesson.date,
+        schoolkid=schoolkid,
+        subject=last_lesson.subject,
+        teacher=last_lesson.teacher,
+    )
+    logger.info(f'Commendation created: {last_lesson.date}, '
+                    f'{last_lesson.subject.title}, {schoolkid.full_name}')
