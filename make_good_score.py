@@ -10,6 +10,10 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 
 logger = logging.getLogger('excellent_student_logger')
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
 
 COMMENDATIONS = (
@@ -118,11 +122,3 @@ def create_commendation(name, subject_title):
         logger.error(f'No schoolkid with name "{name}" was found')
     except MultipleObjectsReturned:
         logger.error(f'Clarify name "{name}": too many schoolkids was found')
-
-
-def main():
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO
-    )
-    
