@@ -55,7 +55,7 @@ def fix_marks(schoolkid):
     for bad_mark in bad_marks:
         bad_mark.points = 5
         bad_mark.save()
-    logger.info(f'{len(bad_marks)} плохих оценок исправлены для ученика'
+    logger.info(f'{len(bad_marks)} плохих оценок исправлены для ученика '
                 f'{schoolkid.full_name}')
 
 
