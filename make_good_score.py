@@ -125,5 +125,5 @@ def create_commendation(schoolkid, subject_title):
         subject=last_lesson.subject,
         teacher=last_lesson.teacher,
     )
-    logger.info(f'Commendation created: {last_lesson.date}, '
+    logger.info(f'Добавлена похвала: {last_lesson.date}, '
                     f'{last_lesson.subject.title}, {schoolkid.full_name}')
