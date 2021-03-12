@@ -73,7 +73,7 @@ def make_good_score(name, commendation_subject):
     except ObjectDoesNotExist:
         logger.error(f'Ученик с именем "{name}" не найден')
     except MultipleObjectsReturned:
-        logger.error(f'Уточните имя "{name}": в базе обнаружено слишком много'
+        logger.error(f'Уточните имя "{name}": в базе обнаружено слишком много '
                     'учеников с таким именем')
     except ValueError as error:
         logger.error(error)
