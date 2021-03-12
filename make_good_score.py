@@ -64,7 +64,7 @@ def remove_chastisements(schoolkid):
     logger.info(f'Замечания удалены для ученика {schoolkid.full_name}')
 
 
-def make_good_pupil(name, commendation_subject):
+def make_good_score(name, commendation_subject):
     try:
         child = get_schoolkid(name)
         fix_marks(child)
