@@ -1,13 +1,9 @@
 import logging
 import random
 
-from datacenter.models import Chastisement
-from datacenter.models import Commendation
-from datacenter.models import Lesson
-from datacenter.models import Mark
-from datacenter.models import Schoolkid
-from django.core.exceptions import MultipleObjectsReturned
-from django.core.exceptions import ObjectDoesNotExist
+from datacenter.models import (Chastisement, Commendation, Lesson, Mark,
+                               Schoolkid)
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 
 logger = logging.getLogger('excellent_student_logger')
 logging.basicConfig(
@@ -51,17 +47,17 @@ COMMENDATIONS = (
 
 
 def fix_marks(schoolkid):
-    bad_marks = Mark.objects.filter(schoolkid=schoolkid, points__in=[2, 3])
-    for bad_mark in bad_marks:
-        bad_mark.points = 5
-        bad_mark.save()
-    logger.info(f'{len(bad_marks)} плохих оценок исправлены для ученика '
+    fixed_marks_count = Mark.objects.filter(schoolkid=schoolkid,
+        points__in=[2, 3]).update(points=5)
+    logger.info(f'{fixed_marks_count} плохих оценок исправлены для ученика '
                 f'{schoolkid.full_name}')
 
 
 def remove_chastisements(schoolkid):
-    Chastisement.objects.filter(schoolkid=schoolkid).delete()
-    logger.info(f'Замечания удалены для ученика {schoolkid.full_name}')
+    deleted_items = Chastisement.objects.filter(
+        schoolkid=schoolkid).delete()
+    logger.info(f'{deleted_items[0]} замечаний(ие) удалено для ученика '
+        f'{schoolkid.full_name}')
 
 
 def make_good_score(name, commendation_subject):
@@ -74,7 +70,7 @@ def make_good_score(name, commendation_subject):
         logger.error(f'Ученик с именем "{name}" не найден')
     except MultipleObjectsReturned:
         logger.error(f'Уточните имя "{name}": в базе обнаружено слишком много '
-                    'учеников с таким именем')
+            'учеников с таким именем')
     except ValueError as error:
         logger.error(error)
 
@@ -86,17 +82,11 @@ def get_schoolkid(name):
 
 
 def is_commendation_at_lesson(schoolkid, lesson):
-    commendations = Commendation.objects.filter(
-        schoolkid=schoolkid,
-        subject=lesson.subject,
-        created=lesson.date
-    )
-    if not any(commendations):
-        logging.debug(f'Замечаний нет по {lesson.subject.title}, {lesson.date}')
-        return
-    logging.debug(f'Найдено {len(commendations)} замечаний по '
-                    f'{lesson.subject.title}, {lesson.date}')
-    return True
+    return Commendation.objects.filter(
+                schoolkid=schoolkid,
+                subject=lesson.subject,
+                created=lesson.date
+            ).exists()
 
 
 def get_last_lesson_without_commendation(schoolkid, subject_title):
@@ -105,7 +95,7 @@ def get_last_lesson_without_commendation(schoolkid, subject_title):
         group_letter=schoolkid.group_letter,
         subject__title=subject_title
     ).order_by('date')
-    if len(lessons) < 1:
+    if lessons.count() < 1:
         raise ValueError('Ошибка при добавлении похвалы: уроки с названием '
             f'"{subject_title}" не найдены')
     lessons_without_commendations = [lesson for lesson in lessons
@@ -126,4 +116,4 @@ def create_commendation(schoolkid, subject_title):
         teacher=last_lesson.teacher,
     )
     logger.info(f'Добавлена похвала: {last_lesson.date}, '
-                    f'{last_lesson.subject.title}, {schoolkid.full_name}')
+        f'{last_lesson.subject.title}, {schoolkid.full_name}')
