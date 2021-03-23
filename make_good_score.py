@@ -3,7 +3,6 @@ import random
 
 from datacenter.models import (Chastisement, Commendation, Lesson, Mark,
                                Schoolkid)
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 
 logger = logging.getLogger('excellent_student_logger')
 logging.basicConfig(
@@ -66,9 +65,9 @@ def make_good_score(name, commendation_subject):
         fix_marks(child)
         remove_chastisements(child)
         create_commendation(child, commendation_subject)
-    except ObjectDoesNotExist:
+    except Schoolkid.DoesNotExist:
         logger.error(f'Ученик с именем "{name}" не найден')
-    except MultipleObjectsReturned:
+    except Schoolkid.MultipleObjectsReturned:
         logger.error(f'Уточните имя "{name}": в базе обнаружено слишком много '
             'учеников с таким именем')
     except ValueError as error:
